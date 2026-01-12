@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { NextFunction as Next, Request, Response } from 'express';
-import { scrapeSeries, scrapeSeriesDetails } from '@/scrapers/series';
+import { scrapeSeries, scrapeSeriesDetails, scrapeEpisodeDetails } from '@/scrapers/series';
 
 type TController = (req: Request, res: Response, next?: Next) => Promise<void>;
 
@@ -109,7 +109,7 @@ export const topRatedSeries: TController = async (req, res) => {
 };
 
 /**
- * Controller for `/series/:seriesId` route
+ * Controller for `/series/:id` route
  * @param {Request} req
  * @param {Response} res
  * @param {Next} next
@@ -121,6 +121,29 @@ export const seriesDetails: TController = async (req, res) => {
         const axiosRequest = await axios.get(`${process.env.ND_URL}/${id}`);
 
         const payload = await scrapeSeriesDetails(req, axiosRequest);
+
+        res.status(200).json(payload);
+    } catch (err) {
+        console.error(err);
+
+        res.status(400).json(null);
+    }
+};
+
+/**
+ * Controller for `/series/episode/:episodeId` route
+ * Get episode details with streaming URLs
+ * @param {Request} req
+ * @param {Response} res
+ * @param {Next} next
+ */
+export const episodeDetails: TController = async (req, res) => {
+    try {
+        const { episodeId } = req.params;
+
+        const axiosRequest = await axios.get(`${process.env.ND_URL}/${episodeId}`);
+
+        const payload = await scrapeEpisodeDetails(req, axiosRequest);
 
         res.status(200).json(payload);
     } catch (err) {

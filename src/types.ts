@@ -54,9 +54,16 @@ export interface ISeries extends Omit<IMovies, 'qualityResolution'> {
     episode: number;
 }
 
+export interface IEpisode {
+    _id: string;
+    episode: number;
+    url: string;
+}
+
 export interface ISeasonsList {
     season: number;
     totalEpisodes: number;
+    episodes: IEpisode[];
 }
 
 export interface ISeriesDetails extends Omit<ISeries, 'url'> {
@@ -69,6 +76,7 @@ export interface ISeriesDetails extends Omit<ISeries, 'url'> {
     countries: string[];
     casts: string[];
     seasons: ISeasonsList[];
+    latestEpisodeUrl?: string;
 }
 
 export interface ISearchedMoviesOrSeries {

@@ -20,6 +20,7 @@ import {
     recentReleaseSeries,
     seriesDetails,
     topRatedSeries,
+    episodeDetails,
 } from '../controllers/series';
 
 import { downloadMovie, downloadSeries } from '@/controllers/download';
@@ -51,6 +52,7 @@ router.get('/series', latestSeries);
 router.get('/popular/series', popularSeries);
 router.get('/recent-release/series', recentReleaseSeries);
 router.get('/top-rated/series', topRatedSeries);
+router.get('/series/episode/:episodeId', episodeDetails);
 router.get('/series/:id', seriesDetails);
 
 router.get('/series/:id/streams', streamSeries);
