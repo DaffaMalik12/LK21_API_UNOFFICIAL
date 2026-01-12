@@ -53,10 +53,13 @@ The target URLs have the potential to change at any time because their servers a
 
 ```bash
 # LK21 (LayarKaca21) URL
-LK21_URL = https://tv.lk21official.live
+LK21_URL=https://tv7.lk21official.cc/
+
+#API KEY
+API_KEY= Please Contact Me For API KEY
 
 # NontonDrama URL
-ND_URL = https://tv.nontondrama.lol
+ND_URL=https://tv.nontondrama.lol
 ```
 
 ## Reference
