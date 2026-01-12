@@ -24,6 +24,7 @@ import {
 } from '../controllers/series';
 
 import { downloadMovie, downloadSeries } from '@/controllers/download';
+import { debugScraper } from '@/controllers/debug';
 
 const router: IRouter = Router();
 
@@ -59,5 +60,7 @@ router.get('/series/:id/streams', streamSeries);
 router.get('/series/:id/downloads', downloadSeries);
 
 router.get('/search/:title', searchedMoviesOrSeries);
+
+router.get('/debug/series/:id', debugScraper);
 
 export default router;

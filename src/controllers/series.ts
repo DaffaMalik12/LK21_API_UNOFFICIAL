@@ -17,7 +17,12 @@ export const latestSeries: TController = async (req, res) => {
         const axiosRequest = await axios.get(
             `${process.env.ND_URL}/latest-series${
                 Number(page) > 1 ? `/page/${page}` : ''
-            }`
+            }`,
+            {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
         );
 
         const payload = await scrapeSeries(req, axiosRequest);
@@ -43,7 +48,12 @@ export const popularSeries: TController = async (req, res) => {
         const axiosRequest = await axios.get(
             `${process.env.ND_URL}/populer${
                 Number(page) > 1 ? `/page/${page}` : ''
-            }`
+            }`,
+            {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
         );
 
         const payload = await scrapeSeries(req, axiosRequest);
@@ -69,7 +79,12 @@ export const recentReleaseSeries: TController = async (req, res) => {
         const axiosRequest = await axios.get(
             `${process.env.ND_URL}/release${
                 Number(page) > 1 ? `/page/${page}` : ''
-            }`
+            }`,
+            {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
         );
 
         const payload = await scrapeSeries(req, axiosRequest);
@@ -95,7 +110,12 @@ export const topRatedSeries: TController = async (req, res) => {
         const axiosRequest = await axios.get(
             `${process.env.ND_URL}/rating${
                 Number(page) > 1 ? `/page/${page}` : ''
-            }`
+            }`,
+            {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
         );
 
         const payload = await scrapeSeries(req, axiosRequest);
@@ -118,7 +138,19 @@ export const seriesDetails: TController = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const axiosRequest = await axios.get(`${process.env.ND_URL}/${id}`);
+        const axiosRequest = await axios.get(`${process.env.ND_URL}/${id}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none'
+            }
+        });
 
         const payload = await scrapeSeriesDetails(req, axiosRequest);
 
@@ -141,7 +173,11 @@ export const episodeDetails: TController = async (req, res) => {
     try {
         const { episodeId } = req.params;
 
-        const axiosRequest = await axios.get(`${process.env.ND_URL}/${episodeId}`);
+        const axiosRequest = await axios.get(`${process.env.ND_URL}/${episodeId}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
 
         const payload = await scrapeEpisodeDetails(req, axiosRequest);
 

@@ -90,16 +90,22 @@ export const scrapeSeriesDetails = async (
 
     // Extract title from h1 tag
     const titleText = $('h1').first().text().trim();
+    console.log('[SCRAPER DEBUG] Title raw:', titleText);
+    
     // Clean up title - remove "Nonton Serial" prefix and "Sub Indo" suffix
     obj['title'] = titleText
         .replace(/^Nonton Serial\s*/i, '')
         .replace(/\s*Sub Indo$/i, '')
         .trim();
+    console.log('[SCRAPER DEBUG] Title cleaned:', obj['title']);
 
     // Extract poster from meta tag or img
     const posterMeta = $('meta[property="og:image"]').attr('content');
     const posterImg = $('div.detail img').first().attr('src') || $('picture img').first().attr('src');
+    console.log('[SCRAPER DEBUG] Poster meta:', posterMeta);
+    console.log('[SCRAPER DEBUG] Poster img:', posterImg);
     obj['posterImg'] = posterMeta || (posterImg?.startsWith('http') ? posterImg : `https:${posterImg}`) || '';
+    console.log('[SCRAPER DEBUG] Final poster:', obj['posterImg']);
 
     // Extract info tags (rating, date, status)
     const infoTags = $('div.info-tag span');
@@ -139,6 +145,7 @@ export const scrapeSeriesDetails = async (
     const synopsisFull = synopsisEl.attr('data-full');
     const synopsisText = synopsisFull || synopsisEl.text().trim();
     obj['synopsis'] = synopsisText.replace('Lihat selengkapnya', '').trim();
+    console.log('[SCRAPER DEBUG] Synopsis length:', obj['synopsis'].length);
 
     // Extract trailer URL from YouTube lightbox button
     const trailerBtn = $('a.yt-lightbox').first();
@@ -275,6 +282,21 @@ export const scrapeSeriesDetails = async (
     obj['countries'] = countries;
     obj['casts'] = casts;
     obj['seasons'] = seasons;
+
+    console.log('[SCRAPER DEBUG] Final object:', {
+        _id: obj['_id'],
+        title: obj['title'],
+        posterImg: obj['posterImg']?.substring(0, 50) + '...',
+        rating: obj['rating'],
+        releaseDate: obj['releaseDate'],
+        status: obj['status'],
+        genresCount: genres.length,
+        directorsCount: directors.length,
+        countriesCount: countries.length,
+        castsCount: casts.length,
+        seasonsCount: seasons.length,
+        episodeCount: obj['episode']
+    });
 
     return obj;
 };
