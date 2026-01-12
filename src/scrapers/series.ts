@@ -20,45 +20,41 @@ export const scrapeSeries = async (
         protocol,
     } = req;
 
-    $('main > div.container > section.archive')
-        .find('div.grid-archive > div#grid-wrapper > div.infscroll-item')
+    // New structure: div.gallery-grid contains figure elements
+    $('div.gallery-grid')
+        .find('figure')
         .each((i, el) => {
-            const parent: cheerio.Cheerio = $(el).find('article.mega-item');
+            const parent: cheerio.Cheerio = $(el);
+            const link: cheerio.Cheerio = $(parent).find('a');
             const genres: string[] = [];
 
-            $(parent)
-                .find('footer')
-                .find('div.grid-categories > a')
-                .each((i, el2) => {
-                    const x: string[] = $(el2).attr('href')?.split('/') ?? [];
+            // Extract genres from plain text (e.g., "Comedy, Drama")
+            const genreText = $(link).find('figcaption > div').first().text().trim();
+            if (genreText) {
+                genres.push(...genreText.split(',').map(g => g.trim().toLowerCase()));
+            }
 
-                    if (x.length > 0 && x[1] === 'genre') {
-                        genres.push(x[2]);
-                    }
-                });
-
-            const seriesId: string =
-                $(parent)
-                    .find('figure > a')
-                    .attr('href')
-                    ?.split('/')
-                    .reverse()[1] ?? '';
+            // Extract series ID from href
+            const href = $(link).attr('href') ?? '';
+            const seriesId: string = href.split('/').filter(Boolean).pop() ?? '';
 
             const obj = {} as ISeries;
 
             obj['_id'] = seriesId;
-            obj['title'] =
-                $(parent).find('figure > a > picture > img').attr('alt') ?? '';
+            obj['title'] = $(link).find('figcaption > h3').text().trim() ?? '';
             obj['type'] = 'series';
-            obj['posterImg'] = `https:${$(parent)
-                .find('figure > a > picture > img')
-                .attr('src')}`;
-            obj['episode'] = Number(
-                $(parent)
-                    .find('figure > div.grid-meta > div.last-episode > span')
-                    .text()
-            );
-            obj['rating'] = $(parent).find('figure').find('div.rating').text();
+            
+            // Get poster image
+            const posterSrc = $(link).find('div.poster img').attr('src') ?? '';
+            obj['posterImg'] = posterSrc.startsWith('http') ? posterSrc : `https:${posterSrc}`;
+            
+            // Try to extract episode number if available
+            const episodeText = $(link).find('span.episode').text().trim();
+            obj['episode'] = episodeText ? Number(episodeText.replace(/\D/g, '')) : 0;
+            
+            // Get rating
+            obj['rating'] = $(link).find('span.rating span[itemprop="ratingValue"]').text().trim();
+            
             obj['url'] = `${protocol}://${host}/series/${seriesId}`;
             obj['genres'] = genres;
 

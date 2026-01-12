@@ -20,45 +20,42 @@ export const scrapeMovies = async (
         headers: { host },
     } = req;
 
-    $('main > div.container > section.archive')
-        .find('div.grid-archive > div#grid-wrapper > div.infscroll-item')
+    // New structure: div.gallery-grid contains figure elements
+    $('div.gallery-grid')
+        .find('figure')
         .each((i, el) => {
-            const parent: cheerio.Cheerio = $(el).find('article.mega-item');
+            const parent: cheerio.Cheerio = $(el);
+            const link: cheerio.Cheerio = $(parent).find('a');
             const genres: string[] = [];
 
-            $(parent)
-                .find('footer')
-                .find('div.grid-categories > a')
-                .each((i, el2) => {
-                    const x: string[] = $(el2).attr('href')?.split('/') ?? [];
+            // Extract genres from plain text (e.g., "Comedy, Drama")
+            const genreText = $(link).find('figcaption > div').first().text().trim();
+            if (genreText) {
+                genres.push(...genreText.split(',').map(g => g.trim().toLowerCase()));
+            }
 
-                    if (x.length > 0 && x[1] === 'genre') {
-                        genres.push(x[2]);
-                    }
-                });
-
-            const movieId: string =
-                $(parent)
-                    .find('figure > a')
-                    .attr('href')
-                    ?.split('/')
-                    .reverse()[1] ?? '';
+            // Extract movie ID from href
+            const href = $(link).attr('href') ?? '';
+            const movieId: string = href.split('/').filter(Boolean).pop() ?? '';
 
             const obj = {} as IMovies;
 
             obj['_id'] = movieId;
-            obj['title'] =
-                $(parent).find('figure > a > picture > img').attr('alt') ?? '';
+            obj['title'] = $(link).find('figcaption > h3').text().trim() ?? '';
             obj['type'] = 'movie';
-            obj['posterImg'] = `https:${$(parent)
-                .find('figure > a > picture > img')
-                .attr('src')}`;
-            obj['rating'] = $(parent).find('figure').find('div.rating').text();
+            
+            // Get poster image
+            const posterSrc = $(link).find('div.poster img').attr('src') ?? '';
+            obj['posterImg'] = posterSrc.startsWith('http') ? posterSrc : `https:${posterSrc}`;
+            
+            // Get rating
+            obj['rating'] = $(link).find('span.rating span[itemprop="ratingValue"]').text().trim();
+            
             obj['url'] = `${protocol}://${host}/movies/${movieId}`;
-            obj['qualityResolution'] = $(parent)
-                .find('figure')
-                .find('div.quality')
-                .text();
+            
+            // Get quality/resolution (e.g., HD, CAM, etc.)
+            obj['qualityResolution'] = $(link).find('span[class*="label-"]').text().trim();
+            
             obj['genres'] = genres;
 
             payload.push(obj);
@@ -87,73 +84,98 @@ export const scrapeMovieDetails = async (
     const countries: string[] = [];
     const casts: string[] = [];
 
-    $('div.content').find('blockquote').find('strong').remove();
-
+    // Extract movie ID from URL
     obj['_id'] = originalUrl.split('/').reverse()[0];
-    obj['title'] =
-        $('div.content-poster').find('figure > picture > img').attr('alt') ??
-        '';
     obj['type'] = 'movie';
-    obj['posterImg'] = `https:${$('div.content-poster')
-        .find('figure > picture > img')
-        .attr('src')}`;
 
-    $('div.content > div').each((i, el) => {
-        /* eslint-disable */
-        switch ($(el).find('h2').text().toLowerCase()) {
-            case 'durasi':
-                obj['duration'] = $(el).find('h3').text().trim();
-                break;
-            case 'imdb':
-                obj['rating'] = $(el).find('h3:nth-child(2)').text().trim();
-                break;
-            case 'diterbitkan':
-                obj['releaseDate'] = $(el).find('h3').text().trim();
-                break;
-            case 'kualitas':
-                obj['quality'] = $(el).find('h3 > a').text().trim();
-                break;
-            case 'sutradara':
-                $(el)
-                    .find('h3 > a')
-                    .each((i, el) => {
-                        directors.push($(el).text().trim());
-                    });
-                break;
-            case 'negara':
-                $(el)
-                    .find('h3 > a')
-                    .each((i, el) => {
-                        countries.push($(el).text());
-                    });
-                break;
-            case 'genre':
-                $(el)
-                    .find('h3 > a')
-                    .each((i, el) => {
-                        genres.push($(el).text());
-                    });
-                break;
-            case 'bintang film':
-                $(el)
-                    .find('h3')
-                    .each((i, el) => {
-                        casts.push($(el).find('a').text());
-                    });
-                break;
-            default:
-                break;
+    // Extract title from h1 tag
+    const titleText = $('h1').first().text().trim();
+    obj['title'] = titleText;
+
+    // Extract poster from meta tag or img
+    const posterMeta = $('meta[property="og:image"]').attr('content');
+    const posterImg = $('div.detail img').first().attr('src');
+    obj['posterImg'] = posterMeta || (posterImg?.startsWith('http') ? posterImg : `https:${posterImg}`) || '';
+
+    // Extract info tags (rating, quality, resolution, duration)
+    const infoTags = $('div.info-tag span');
+    if (infoTags.length > 0) {
+        // Rating is usually in the first span with strong tag
+        const ratingEl = $('div.info-tag span strong').first();
+        obj['rating'] = ratingEl.text().trim();
+
+        // Quality, resolution, duration are in subsequent spans
+        infoTags.each((i, el) => {
+            const text = $(el).text().trim();
+            // Quality: WEBDL, HD, CAM, Bluray, etc.
+            if (/^(WEBDL|HD|CAM|Bluray|HDTV|WEB-DL)/i.test(text)) {
+                obj['quality'] = text;
+            }
+            // Resolution: 1080p, 720p, etc.
+            else if (/^\d{3,4}p$/.test(text)) {
+                // Resolution is stored but not in the interface, we can skip or add to quality
+            }
+            // Duration: 1h 33m, 2h 15m, etc.
+            else if (/^\d+h\s+\d+m$/.test(text)) {
+                obj['duration'] = text;
+            }
+        });
+    }
+
+    // Extract genres and countries from tag-list
+    $('div.tag-list a').each((i, el) => {
+        const href = $(el).attr('href') || '';
+        const text = $(el).text().trim();
+        
+        if (href.includes('/genre/')) {
+            genres.push(text);
+        } else if (href.includes('/country/')) {
+            countries.push(text);
         }
-        /* eslint-enable */
     });
 
-    obj['synopsis'] = $('div.content').find('blockquote').text();
-    obj['trailerUrl'] =
-        $('div.action-player').find('a.fancybox').attr('href') ?? '';
+    // Extract synopsis from .synopsis div with data-full attribute
+    const synopsisEl = $('div.synopsis');
+    const synopsisFull = synopsisEl.attr('data-full');
+    const synopsisText = synopsisFull || synopsisEl.text().trim();
+    obj['synopsis'] = synopsisText.replace('Lihat selengkapnya', '').trim();
+
+    // Extract trailer URL from YouTube lightbox button
+    const trailerBtn = $('a.yt-lightbox').first();
+    obj['trailerUrl'] = trailerBtn.attr('href') || '';
+
+    // Directors and casts might be in a different section or not available in new structure
+    // We'll leave them empty for now unless we find the correct selectors
+    $('div.cast-list a, div.director-list a').each((i, el) => {
+        const href = $(el).attr('href') || '';
+        const text = $(el).text().trim();
+        
+        if (href.includes('/director/')) {
+            directors.push(text);
+        } else if (href.includes('/cast/') || href.includes('/actor/')) {
+            casts.push(text);
+        }
+    });
+
+    // Extract video server URLs from "GANTI PLAYER" section
+    const videoServers: { server: string; url: string }[] = [];
+    $('a[href*="playeriframe.sbs"]').each((i, el) => {
+        const serverName = $(el).text().trim();
+        const serverUrl = $(el).attr('href') || '';
+        
+        if (serverName && serverUrl) {
+            videoServers.push({
+                server: serverName,
+                url: serverUrl
+            });
+        }
+    });
+
     obj['genres'] = genres;
     obj['directors'] = directors;
     obj['countries'] = countries;
     obj['casts'] = casts;
+    obj['videoServers'] = videoServers;
 
     return obj;
 };

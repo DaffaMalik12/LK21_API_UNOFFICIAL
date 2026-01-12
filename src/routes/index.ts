@@ -4,6 +4,7 @@ import { moviesByGenre, setOfGenres } from '@/controllers/genre';
 import { moviesByYear, setOfYears } from '@/controllers/year';
 import { searchedMoviesOrSeries } from '@/controllers/search';
 import { moviesByCountry, setOfCountries } from '@/controllers/country';
+import { validateApiKey } from '@/middlewares/apiKeyAuth';
 
 import {
     latestMovies,
@@ -24,6 +25,9 @@ import {
 import { downloadMovie, downloadSeries } from '@/controllers/download';
 
 const router: IRouter = Router();
+
+// Apply API key validation to all routes
+router.use(validateApiKey);
 
 router.get('/movies', latestMovies);
 router.get('/popular/movies', popularMovies);

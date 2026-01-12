@@ -24,7 +24,7 @@ Unofficial LK21 (LayarKaca21) and NontonDrama APIs for streaming movies, animati
 **Step 1:** Clone this repository.
 
 ```bash
-git clone https://github.com/febriadj/lk21-api.git
+git clone https://github.com/DaffaMalik12/LK21_API_UNOFFICIAL.git
 ```
 
 **Step 2:** Rename the `.env.example` file to `.env` and complete the required [environment variables](#environment-variables).

@@ -21,6 +21,7 @@ export interface IMovieDetails
     directors: string[];
     countries: string[];
     casts: string[];
+    videoServers: { server: string; url: string }[];
 }
 
 export interface IStreamSources {
