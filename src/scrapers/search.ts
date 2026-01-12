@@ -20,53 +20,46 @@ export const scrapeSearchedMoviesOrSeries = async (
         protocol,
     } = req;
 
-    $('div.search-wrapper > div.search-item').each((i, el) => {
-        const content: cheerio.Cheerio = $(el).find('div.search-content');
+    // Use the same selector as scrapeMovies: div.gallery-grid figure
+    const items = $('div.gallery-grid figure').length > 0 
+        ? $('div.gallery-grid figure') 
+        : $('div.search-item'); // Fallback to old selector just in case
+
+    items.each((i, el) => {
+        const link = $(el).find('a').first();
         const obj = {} as ISearchedMoviesOrSeries;
         const genres: string[] = [];
 
+        // Extract genres
+        const genreText = $(el).find('figcaption > div.genre').text().trim();
+        if (genreText) {
+            genres.push(...genreText.split(',').map(g => g.trim().toLowerCase()));
+        }
+
+        const href = link.attr('href') || '';
+        const hrefParts = href.split('/').filter(Boolean);
+        const movieId = hrefParts.pop() || '';
+        
+        // Determine type based on URL structure or logic
         let type: 'movie' | 'series' = 'movie';
-
-        $(el)
-            .find('p.cat-links > a')
-            .each((i, el2) => {
-                const x: string[] = $(el2).attr('href')?.split('/') || [];
-
-                if (x[1] === 'genre') genres.push(x[2]);
-                if (x[1] === 'series') type = 'series';
-            });
-
-        const movieId =
-            $(content).find('h2 > a').attr('href')?.split('/').reverse()[1] ||
-            '';
+        if (href.includes('/series/') || href.includes('/tv/')) {
+            type = 'series';
+        }
 
         obj['_id'] = movieId;
-        obj['title'] = $(content).find('h2 > a').text();
+        obj['title'] = $(el).find('figcaption > h3').text().trim();
         obj['type'] = type;
-        obj['posterImg'] = `https://${$(el)
-            .find('figure > a > img')
-            .attr('src')}`;
+        
+        // Extract poster
+        const posterSrc = $(el).find('div.poster img').attr('src') || '';
+        obj['posterImg'] = posterSrc.startsWith('http') ? posterSrc : `https:${posterSrc}`;
+        
         obj['url'] = `${protocol}://${host}/${type}/${movieId}`;
         obj['genres'] = genres;
-
-        /* eslint-disable */
-        $(content)
-            .find('p')
-            .each((i, el2) => {
-                switch ($(el2).find('strong').text().toLowerCase()) {
-                    case 'sutradara:':
-                        $(el2).find('strong').remove();
-                        obj['directors'] = $(el2).text().trim().split(', ');
-                        break;
-                    case 'bintang:':
-                        $(el2).find('strong').remove();
-                        obj['casts'] = $(el2).text().trim().split(', ');
-                        break;
-                    default:
-                        break;
-                }
-            });
-        /* eslint-enable */
+        
+        // Directors and casts are not typically available in grid view
+        obj['directors'] = [];
+        obj['casts'] = [];
 
         payload.push(obj);
     });
